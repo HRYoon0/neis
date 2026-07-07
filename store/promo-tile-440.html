@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      html,body{margin:0}
+      .tile{
+        width:440px;height:280px;box-sizing:border-box;padding:34px 36px;
+        display:flex;flex-direction:column;justify-content:center;gap:14px;
+        background:radial-gradient(120% 90% at 12% 0%, #d97a37 0%, #c25730 55%, #a3492a 100%);
+        font-family:system-ui,"Malgun Gothic",sans-serif;color:#fff;overflow:hidden;position:relative;
+      }
+      .badge{align-self:flex-start;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.35);
+        font-weight:800;font-size:13px;padding:5px 12px;border-radius:999px}
+      h1{font-size:34px;line-height:1.2;margin:0;letter-spacing:-1px;font-weight:800}
+      p{margin:0;font-size:16px;font-weight:600;opacity:.95;line-height:1.35}
+      .ico{position:absolute;right:-18px;bottom:-22px;width:150px;height:150px;opacity:.16}
+      .ico svg{width:100%;height:100%;stroke:#fff;stroke-width:1.6;fill:none}
+    </style>
+  </head>
+  <body>
+    <div class="tile">
+      <span class="badge">교사용 · 크롬 확장</span>
+      <h1>NEIS 종합의견<br />자동입력 도우미</h1>
+      <p>엑셀 평어를 나이스에 한 번에 채우기</p>
+      <div class="ico">
+        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>
+      </div>
+    </div>
+  </body>
+</html>

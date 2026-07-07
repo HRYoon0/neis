@@ -66,15 +66,13 @@
   - [x] 승인된 사용 사례와 무관하게 데이터를 판매/양도하지 않습니다.
   - [x] 제3자의 개인적 목적/신용도 판단 등에 데이터를 사용/양도하지 않습니다.
   - [x] 데이터를 수집·사용하지 않으므로 관련 규정을 준수합니다.
-- 개인정보처리방침:
-  - 확장 **내부에 포함**됨 → 사이드바 최하단 "개인정보처리방침" 링크로 `privacy.html`(확장 내부 페이지) 열림.
-  - 단, 대시보드의 **Privacy policy URL 칸에는 공개 https 주소가 필요**함 (chrome-extension:// 불가).
-    → 동일 내용인 `store/PRIVACY.html` 을 공개 URL로 게시해 그 주소를 입력 (아래 7번).
+- 개인정보처리방침 URL(대시보드에 입력): **https://hryoon0.github.io/neis/store/PRIVACY.html**
+  - 확장 내부에도 포함됨 → 사이드바 최하단 "개인정보처리방침" 링크로도 열람 가능.
 
 ## 7. 제출 전 남은 준비물 (사람이 해야 하는 작업)
 
-1. **개인정보처리방침 게시** — `store/PRIVACY.html` 을 공개 URL로 올리고 그 주소를 대시보드에 입력.
-   (예: GitHub 저장소 → Settings → Pages 로 무료 호스팅, 또는 Google Sites 등)
+1. ✅ **개인정보처리방침 게시 완료** — https://hryoon0.github.io/neis/store/PRIVACY.html
+   (GitHub 저장소 `HRYoon0/neis` 의 Pages로 호스팅됨. 이 URL을 대시보드에 입력)
 2. **스크린샷 1장 이상** — 1280×800 또는 640×400 PNG/JPEG.
    사이드패널 캡처를 위 규격 캔버스에 올려 준비 (여백/배경 추가).
 3. (선택) 작은 프로모션 타일 440×280.

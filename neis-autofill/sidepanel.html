@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NEIS 자동입력 도우미</title>
+    <link rel="stylesheet" href="sidepanel.css" />
+  </head>
+  <body>
+    <header class="app-header">
+      <div class="logo"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg></div>
+      <div class="title-wrap">
+        <h1>NEIS 종합의견 자동입력</h1>
+        <p>엑셀·CSV 파일 → 나이스 한 번에 입력</p>
+      </div>
+      <button id="btnTheme" class="theme-toggle" type="button" title="테마 선택" aria-label="테마 선택" aria-haspopup="true" aria-expanded="false">
+        <span class="tt-ico" id="themeIco"><svg class="ic" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg></span>
+        <span id="themeLabel">시스템</span>
+        <span class="tt-caret">▾</span>
+      </button>
+      <div id="themeMenu" class="theme-menu" role="menu" hidden>
+        <button type="button" class="theme-opt" data-theme-val="system" role="menuitem"><svg class="ic" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg> 시스템</button>
+        <button type="button" class="theme-opt" data-theme-val="light" role="menuitem"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg> 라이트</button>
+        <button type="button" class="theme-opt" data-theme-val="dark" role="menuitem"><svg class="ic" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg> 다크</button>
+      </div>
+    </header>
+
+    <div class="banner warn">
+      <span class="banner-ico"><svg class="ic" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg></span>
+      <span
+        ><b>입력 전 2~3명으로 먼저 테스트하세요.</b><br />값을 확인한 뒤 나이스에서 직접
+        저장하세요.</span
+      >
+    </div>
+
+    <!-- STEP 1 : 데이터 -->
+    <section class="card">
+      <div class="card-title"><span class="step">1</span> 데이터 준비</div>
+
+
+      <button id="btnTemplate" class="btn btn-soft btn-block">
+        <svg class="ic" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
+        템플릿 시트 다운로드 (.xlsx)
+      </button>
+      <ol class="steps">
+        <li><span class="n">1</span><span>나이스 <b>[학기말 종합의견]</b> 탭 열고 <b>[조회]</b></span></li>
+        <li><span class="n">2</span><span>이 버튼 클릭 → <b>번호·이름이 채워진</b> 템플릿 받기</span></li>
+        <li><span class="n">3</span><span>종합의견만 입력해 <b>다시 업로드</b> → 이름 자동 매칭</span></li>
+        <li class="steps-foot">다른 화면에서 누르면 빈 예시 템플릿이 받아집니다.</li>
+      </ol>
+
+      <label class="field-label">파일 업로드 <span class="muted">.xlsx / .csv</span></label>
+      <label class="file-drop" for="file">
+        <svg class="ic fd-up" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg>
+        <svg class="ic fd-ok" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>
+        <span id="fileName">클릭해서 파일 선택 · 자동 파싱됩니다</span>
+        <input id="file" type="file" accept=".xlsx,.xls,.csv" hidden />
+      </label>
+
+      <textarea id="paste" rows="6" hidden></textarea>
+
+      <label class="field-label">입력 방식</label>
+      <select id="format">
+        <option value="sequence">순서대로 · 내용만 (각 줄 = 한 명)</option>
+        <option value="number">번호 · 내용</option>
+        <option value="name">이름 · 내용</option>
+        <option value="both">번호 · 이름 · 내용</option>
+      </select>
+    </section>
+
+    <!-- STEP 2 : 옵션 -->
+    <section class="card" id="cardOptions">
+      <div class="card-title toggle" id="optToggle" role="button" tabindex="0" aria-expanded="true" aria-controls="optBody">
+        <span class="step">2</span> 입력 옵션
+        <span class="collapse-caret">▾</span>
+      </div>
+
+      <div class="card-body" id="optBody">
+        <label class="field-label">기록 방식</label>
+        <div class="segmented" id="writeMode">
+          <input type="radio" name="writeMode" id="modeOverwrite" value="overwrite" checked />
+          <label for="modeOverwrite">덮어쓰기</label>
+          <input type="radio" name="writeMode" id="modeAppend" value="append" />
+          <label for="modeAppend">이어쓰기</label>
+        </div>
+
+        <div class="row" id="sepRow">
+          <div class="col">
+            <label class="field-label">이어쓸 때 구분</label>
+            <select id="separator">
+              <option value="space">한 칸 띄우고</option>
+              <option value="newline">줄바꿈</option>
+              <option value="none">붙여서</option>
+            </select>
+          </div>
+          <div class="col">
+            <label class="field-label">종합의견 컬럼</label>
+            <input id="opinionCol" type="text" placeholder="자동" />
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col">
+            <label class="field-label">입력 간격(ms)</label>
+            <input id="delay" type="number" value="120" min="0" step="20" />
+          </div>
+        </div>
+        <p class="hint">
+          나이스(eXBuilder6) 화면이면 컬럼을 자동 감지합니다. 틀리면 필드 스캔으로 확인 후
+          종합의견 컬럼 번호를 직접 입력하세요.
+        </p>
+      </div>
+    </section>
+
+    <!-- STEP 3 : 실행 -->
+    <section class="card">
+      <div class="card-title"><span class="step">3</span> 실행</div>
+      <div class="btn-row">
+        <button id="btnFill" class="btn btn-primary btn-grow"><svg class="ic" viewBox="0 0 24 24"><path d="M6 4l14 8-14 8V4z" fill="currentColor" stroke="none"/></svg> 자동입력 시작</button>
+        <button id="btnStop" class="btn btn-danger" disabled><svg class="ic" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="1.5" fill="currentColor" stroke="none"/></svg> 중지</button>
+      </div>
+      <div class="btn-grid">
+        <button id="btnPreview" class="btn btn-ghost"><svg class="ic" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg> 미리보기</button>
+        <button id="btnUndo" class="btn btn-ghost"><svg class="ic" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-4"/></svg> 되돌리기</button>
+        <button id="btnScan" class="btn btn-ghost"><svg class="ic" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg> 필드 스캔</button>
+        <button id="btnDeep" class="btn btn-ghost"><svg class="ic" viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg> 심화진단</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-title-sm">진행 로그</div>
+      <div id="log" class="log"></div>
+    </section>
+
+    <section class="card">
+      <div class="card-title-sm">미리보기</div>
+      <div id="preview" class="preview">
+        <p class="empty">데이터를 붙여넣거나 업로드하세요.</p>
+      </div>
+    </section>
+
+    <footer>
+      <a href="privacy.html" target="_blank" rel="noopener">개인정보처리방침</a>
+      <span class="foot-sep">·</span> v1.0.0
+    </footer>
+
+    <script src="lib/xlsx.full.min.js"></script>
+    <script src="sidepanel.js"></script>
+  </body>
+</html>

@@ -1,0 +1,47 @@
+{
+  "manifest_version": 3,
+  "name": "NEIS 종합의견 자동입력 도우미",
+  "version": "1.0.0",
+  "description": "엑셀·구글시트에서 복사한 학기말 종합의견/세특/행발을 나이스(NEIS)에 이름·번호·순서로 자동 입력합니다.",
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "sidePanel"
+  ],
+  "host_permissions": [
+    "https://*.neis.go.kr/*",
+    "https://*.eduptl.kr/*",
+    "https://*.edunavi.kr/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "NEIS 자동입력 도우미 열기"
+  },
+  "side_panel": {
+    "default_path": "sidepanel.html"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://*.neis.go.kr/*",
+        "https://*.eduptl.kr/*",
+        "https://*.edunavi.kr/*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "css": [
+        "content.css"
+      ],
+      "run_at": "document_idle",
+      "all_frames": true
+    }
+  ],
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}

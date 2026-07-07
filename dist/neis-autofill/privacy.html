@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>개인정보처리방침 · NEIS 종합의견 자동입력 도우미</title>
+    <style>
+      :root {
+        --bg: #f6f1e8; --card: #fff; --ink: #3b2f26; --soft: #5b4a3d;
+        --muted: #8f7e6f; --line: #ece2d3; --primary: #bd5a34;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #201911; --card: #2b231a; --ink: #f1e8da; --soft: #cdbfae;
+          --muted: #a89887; --line: #3b3025; --primary: #e2895b;
+        }
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0; padding: 40px 20px; background: var(--bg); color: var(--ink);
+        font-family: system-ui, "Malgun Gothic", -apple-system, sans-serif; line-height: 1.7;
+      }
+      .wrap {
+        max-width: 720px; margin: 0 auto; background: var(--card);
+        border: 1px solid var(--line); border-radius: 16px; padding: 32px 34px;
+      }
+      h1 { font-size: 22px; margin: 0 0 4px; letter-spacing: -0.4px; }
+      .meta { color: var(--muted); font-size: 13px; margin: 0 0 22px; }
+      h2 { font-size: 16px; margin: 26px 0 8px; padding-bottom: 6px; border-bottom: 1px solid var(--line); }
+      p, li { color: var(--soft); }
+      b { color: var(--ink); }
+      code { background: rgba(189,90,52,.12); color: var(--primary); padding: 1px 6px; border-radius: 5px; font-size: 13px; }
+      a { color: var(--primary); }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <h1>개인정보처리방침</h1>
+      <p class="meta">NEIS 종합의견 자동입력 도우미 · 시행일 2026-07-07</p>
+
+      <p>
+        본 확장 프로그램은 교사가 엑셀·CSV·구글시트에 작성한 학생 평어(성취기준 및 특기사항,
+        종합의견 등)를 나이스(NEIS) 입력 화면에 자동으로 채워 넣는 도구입니다.
+      </p>
+
+      <h2>1. 수집·전송하는 개인정보 — 없음</h2>
+      <p>
+        확장은 어떠한 개인정보도 <b>수집·저장·외부 전송하지 않습니다.</b> 사용자가 붙여넣거나
+        업로드한 평어, 나이스 화면에서 읽은 번호·이름은 <b>오직 사용자의 브라우저 안에서만</b>
+        자동입력 매칭 목적에 한해 일시적으로 사용된 뒤 사라지며, 개발자나 제3자에게 전송되지
+        않습니다.
+      </p>
+
+      <h2>2. 데이터 저장</h2>
+      <p>
+        로컬에 저장하는 유일한 값은 <b>화면 테마 설정</b>이며 브라우저의 <code>localStorage</code>에만
+        보관됩니다. 학생 정보·평어 내용은 저장하지 않습니다.
+      </p>
+
+      <h2>3. 권한 사용 목적</h2>
+      <p>
+        <b>activeTab / scripting</b> — 실행한 나이스 탭에 입력 스크립트를 주입하기 위함.
+        <b>sidePanel</b> — 입력 UI를 사이드패널로 표시하기 위함.
+        호스트 권한(<code>*.neis.go.kr</code>, <code>*.eduptl.kr</code>, <code>*.edunavi.kr</code>) —
+        나이스·교육청 업무포털 화면에서만 동작하도록 범위를 제한하기 위함.
+      </p>
+
+      <h2>4. 제3자 제공 및 판매</h2>
+      <p>개인정보를 제3자에게 제공·판매하지 않으며, 광고·분석 도구를 포함하지 않습니다.</p>
+
+      <h2>5. 문의</h2>
+      <p>문의: <a href="mailto:tmdsh2000@gmail.com">tmdsh2000@gmail.com</a></p>
+    </div>
+  </body>
+</html>

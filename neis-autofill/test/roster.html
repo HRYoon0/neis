@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <title>테스트 명렬표 (NEIS 모의)</title>
+    <style>
+      body {
+        font-family: "Malgun Gothic", sans-serif;
+        padding: 20px;
+        background: #fafafa;
+      }
+      h1 {
+        font-size: 18px;
+      }
+      table {
+        border-collapse: collapse;
+        width: 100%;
+        max-width: 780px;
+        background: #fff;
+      }
+      th,
+      td {
+        border: 1px solid #cfd8dc;
+        padding: 6px 8px;
+        vertical-align: top;
+      }
+      th {
+        background: #eceff1;
+      }
+      td.no {
+        width: 40px;
+        text-align: center;
+      }
+      td.name {
+        width: 70px;
+        text-align: center;
+      }
+      textarea {
+        width: 100%;
+        height: 44px;
+        border: 1px solid #b0bec5;
+        border-radius: 4px;
+        box-sizing: border-box;
+        font-family: inherit;
+        font-size: 13px;
+        resize: vertical;
+      }
+      p.note {
+        color: #607d8b;
+        font-size: 13px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>테스트 명렬표 (NEIS 학기말 종합의견 모의)</h1>
+    <p class="note">
+      확장프로그램 → ② 필드 스캔, ③ 자동입력 을 여기서 연습하세요. 번호/이름 매칭과 순서
+      입력이 잘 되는지 확인할 수 있습니다.
+    </p>
+    <table id="roster">
+      <thead>
+        <tr>
+          <th>번호</th>
+          <th>이름</th>
+          <th>학기말 종합의견</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <script>
+      const students = [
+        [1, "김민준"],
+        [2, "이서연"],
+        [3, "박도윤"],
+        [4, "최지우"],
+        [5, "정하은"],
+        [6, "강시우"],
+        [7, "조유나"],
+        [8, "윤예준"],
+      ];
+      const tb = document.querySelector("#roster tbody");
+      students.forEach(([no, name]) => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td class="no">${no}</td><td class="name">${name}</td><td><textarea></textarea></td>`;
+        tb.appendChild(tr);
+      });
+    </script>
+  </body>
+</html>

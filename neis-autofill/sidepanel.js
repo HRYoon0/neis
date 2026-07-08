@@ -694,7 +694,12 @@ function neisGridAction(action, payload) {
     }
   };
   const rowCount = T(() => grid.getDataRowCount(), T(() => grid.getRowCount(), 0));
-  const widths = T(() => grid.getColumnWidths(), []) || [];
+  // 컬럼 폭: getColumnLayout()이 더 정확(getColumnWidths는 창의적 등에서 부정확) → 우선 사용
+  let widths = T(() => {
+    const cl = grid.getColumnLayout();
+    return cl && Array.isArray(cl.columnLayout) ? cl.columnLayout.map((x) => x.width || 0) : null;
+  }, null);
+  if (!widths || !widths.length) widths = T(() => grid.getColumnWidths(), []) || [];
   const colCount = widths.length;
   const cellT = (r, c) => {
     const v = T(() => grid.getCellText(r, c));

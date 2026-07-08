@@ -22,7 +22,7 @@
         display:flex;align-items:center;justify-content:center;font-size:15px;margin-top:1px}
       .foot{margin-top:26px;font-size:15px;color:#8f7e6f;font-weight:600}
       .panelframe{
-        flex:0 0 392px;height:748px;border-radius:26px;overflow:hidden;background:#201911;
+        flex:0 0 392px;height:748px;border-radius:26px;overflow:hidden;background:#f6f1e8;
         box-shadow:0 30px 70px -24px rgba(120,60,20,.55), 0 0 0 1px rgba(0,0,0,.06);
       }
       .panelframe iframe{width:392px;height:1880px;border:0;transform:translateY(0)}
@@ -32,18 +32,26 @@
     <div class="shot">
       <div class="copy">
         <span class="badge">교사용 · 크롬 확장</span>
-        <h1>엑셀 평어를<br /><span class="hl">나이스에 자동 입력</span></h1>
+        <h1>엑셀 내용을<br /><span class="hl">나이스에 자동 입력</span></h1>
         <ul>
-          <li><span class="chk">✓</span><span><b>성취기준 및 특기사항</b>을 한 번에 채우기</span></li>
+          <li><span class="chk">✓</span><span><b>학기말종합의견·행동특성및종합의견·창의적체험활동</b> 지원</span></li>
           <li><span class="chk">✓</span><span>나이스 화면의 <b>번호·이름으로 템플릿 자동 생성</b></span></li>
-          <li><span class="chk">✓</span><span><b>번호·이름 매칭</b> 또는 순서대로 입력 · 자동 판별</span></li>
+          <li><span class="chk">✓</span><span>창의적체험활동은 <b>자율·자치활동·진로활동 2칸</b> 동시 입력</span></li>
           <li><span class="chk">✓</span><span>되돌리기 · <b>모든 처리는 브라우저 안에서만</b></span></li>
         </ul>
         <div class="foot">설치 후 툴바 아이콘 클릭 → 오른쪽 사이드패널</div>
       </div>
       <div class="panelframe">
-        <iframe src="../dist/neis-autofill/sidepanel.html" scrolling="no"></iframe>
+        <iframe id="pf" src="../dist/neis-autofill/sidepanel.html" scrolling="no"></iframe>
       </div>
     </div>
+    <script>
+      // 프로모션 이미지의 사이드패널을 항상 라이트 모드로 고정
+      document.getElementById("pf").addEventListener("load", function () {
+        try {
+          this.contentDocument.documentElement.setAttribute("data-theme", "light");
+        } catch (e) {}
+      });
+    </script>
   </body>
 </html>

@@ -497,41 +497,50 @@ function deepProbe() {
           if (ci && typeof ci === "object") {
             gd.cellInfo.push({
               c,
-              keys: Object.keys(ci).slice(0, 10),
-              field: ci.dataField || ci.column || ci.name || ci.id,
-              type: ci.type || ci.cellType || ci.editType,
+              name: ci.columnName,
+              type: ci.columnType,
+              merged: ci.mergedColumnName,
+              ctrl: ci.control && ci.control.constructor ? ci.control.constructor.name : undefined,
             });
           }
         }
+        // 디테일 밴드(특기사항) 구조 파악용
+        gd.detailCellIndices = T(() => grid.getDetailCellIndices());
+        gd.headerCellIndices = T(() => grid.getHeaderCellIndices());
+        gd.columnLayout = T(() => JSON.stringify(grid.getColumnLayout()).slice(0, 1000));
         out.cpr.gridData = gd;
 
         // 창의적체험활동용: 그리드 영역 안의 편집 가능한 입력상자(특기사항) 탐지 + 주변 라벨(영역)
         try {
           const ta = [];
-          const inputs = document.querySelectorAll("textarea, input, [contenteditable='true']");
+          const inputs = document.querySelectorAll(
+            "textarea, input, [contenteditable], .cl-inputbox, [class*='cl-textarea'], [class*='cl-memo'], [class*='cl-input']"
+          );
           inputs.forEach((el) => {
             const r = el.getBoundingClientRect();
-            if (r.width < 40 || r.height < 12 || r.top < 0 || r.top > innerHeight) return;
-            // 주변(조상) 텍스트에서 영역 이름 후보 수집
-            let near = "";
-            let p = el.parentElement;
-            for (let d = 0; d < 5 && p; d++, p = p.parentElement) {
-              const t = (p.textContent || "").replace(/\s+/g, " ").trim();
-              if (t && t.length < 40) {
-                near = t;
-                break;
-              }
-            }
+            if (r.width < 120 || r.height < 14 || r.top < 60 || r.top > innerHeight) return;
+            const cls = ("" + (el.className && el.className.baseVal !== undefined ? el.className.baseVal : el.className || "")).slice(0, 30);
             ta.push({
               tag: el.tagName.toLowerCase() + (el.type ? "[" + el.type + "]" : ""),
+              cls,
               x: Math.round(r.left),
               y: Math.round(r.top),
               w: Math.round(r.width),
               val: (el.value || el.textContent || "").slice(0, 12),
-              near: near.slice(0, 30),
             });
           });
-          out.cpr.editBoxes = ta.slice(0, 30);
+          out.cpr.editBoxes = ta.sort((a, b) => a.y - b.y).slice(0, 30);
+          // 영역 구분 라벨(자율·자치활동/진로활동 등) 위치 — 상자와 y로 매칭
+          const areas = [];
+          document.querySelectorAll("div,span,td,th").forEach((el) => {
+            if (el.children.length) return;
+            const t = (el.textContent || "").replace(/\s+/g, " ").trim();
+            if (t.length > 25 || !/자율.?자치|동아리|진로활동|봉사활동|청소년단체|방과후|스포츠클럽/.test(t)) return;
+            const r = el.getBoundingClientRect();
+            if (r.width < 1 || r.top < 60 || r.top > innerHeight) return;
+            areas.push({ t: t.slice(0, 20), y: Math.round(r.top) });
+          });
+          out.cpr.areaLabels = areas.sort((a, b) => a.y - b.y).slice(0, 20);
         } catch (e) {
           out.cpr.editBoxesErr = String(e && e.message);
         }
@@ -1142,9 +1151,14 @@ $("btnDeep").addEventListener("click", async () => {
       (g.previewVal || []).forEach((row, i) => log(`  val행${i}: ${JSON.stringify(row)}`));
       (g.moreRows || []).forEach((row, i) => log(`  행${i}(text|val): ${JSON.stringify(row)}`));
       if (g.cellInfo && g.cellInfo.length) log(`  cellInfo: ${JSON.stringify(g.cellInfo)}`);
+      if (g.detailCellIndices) log(`  detailCellIndices: ${JSON.stringify(g.detailCellIndices)}`);
+      if (g.headerCellIndices) log(`  headerCellIndices: ${JSON.stringify(g.headerCellIndices)}`);
+      if (g.columnLayout) log(`  columnLayout: ${g.columnLayout}`);
     }
     if (c.editBoxes)
       log(`  편집상자 ${c.editBoxes.length}개: ${JSON.stringify(c.editBoxes)}`, "info");
+    if (c.areaLabels)
+      log(`  영역라벨 ${c.areaLabels.length}개: ${JSON.stringify(c.areaLabels)}`, "info");
     if (c.editBoxesErr) log(`  편집상자 탐지 오류: ${c.editBoxesErr}`, "err");
     log(`DataSet 총 ${c.dsTotal ?? 0}개 (predication ${c.predDsCount ?? "-"})`, "info");
     (c.datasets || []).forEach((d, i) => {

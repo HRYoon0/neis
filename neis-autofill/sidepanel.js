@@ -712,6 +712,26 @@ function neisGridAction(action, payload) {
       break;
     }
   }
+  // 실제 나이스 그리드는 getInitConfig 헤더가 비어 있음 → 화면의 '…종합의견/특기사항' 제목 텍스트를 라벨로
+  if (!opinionLabel && (action === "roster" || action === "scan")) {
+    try {
+      let best = "";
+      let bestTop = Infinity;
+      const els = document.querySelectorAll("span,div,td,th,a,strong,b,label,h1,h2,h3,li");
+      for (const el of els) {
+        if (el.children.length) continue;
+        const t = (el.textContent || "").replace(/\s+/g, " ").trim();
+        if (!t || t.length > 20 || !/종합의견|특기사항/.test(t)) continue;
+        const r = el.getBoundingClientRect();
+        if (r.width < 1 || r.height < 1) continue;
+        if (r.top < bestTop) {
+          bestTop = r.top;
+          best = t;
+        }
+      }
+      if (best) opinionLabel = best.replace(/\s*-\s*.*$/, "").trim();
+    } catch (e) {}
+  }
 
   // 종합의견 컬럼(인덱스): 수동지정 > 헤더 '특기사항/종합의견' > 번호/이름/버튼 제외 최대폭
   let opinionCol = -1;
@@ -918,6 +938,9 @@ function neisGridAction(action, payload) {
       }
       try {
         grid.setCellValue(gr, opinionCol, newVal);
+        try {
+          grid.updateRow(gr); // 렌더 갱신(글자수 등 표시 반영 유도)
+        } catch (e) {}
       } catch (e) {}
       // 실제 셀 값이 바뀌었는지 확인 (화면 기준)
       let after;

@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "NEIS 종합의견 자동입력 도우미",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "엑셀·구글시트에서 복사한 학기말 종합의견/세특/행발을 나이스(NEIS)에 이름·번호·순서로 자동 입력합니다.",
   "permissions": ["activeTab", "scripting", "sidePanel"],
   "host_permissions": [

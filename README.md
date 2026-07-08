@@ -9,7 +9,7 @@
 | --- | --- |
 | `neis-autofill/` | 확장 소스 (개발용 · 연습 페이지/심화진단 포함) |
 | `dist/neis-autofill/` | 웹스토어 배포본 (개발용 요소 제거된 클린 빌드) |
-| `dist/neis-autofill-1.0.0.zip` | 웹스토어 업로드 패키지 |
+| `dist/neis-autofill-1.0.1.zip` | 웹스토어 업로드 패키지 |
 | `store/` | 스토어 등록 자료 (설명·스크린샷·개인정보처리방침) |
 | `build.js` | 배포본 재생성 스크립트 (`node build.js`) |
 

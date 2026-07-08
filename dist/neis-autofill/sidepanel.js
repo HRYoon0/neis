@@ -237,7 +237,12 @@ $("btnScan").addEventListener("click", async () => {
   if (g && g.ok) {
     const d = g.detected;
     log(`✅ 나이스 그리드 감지: ${d.rowCount}명, 컬럼 ${d.colCount}개`, "info");
-    log(`   컬럼 위치 → 번호=${d.numberCol} 이름=${d.nameCol} 종합의견=${d.opinionCol}`, "info");
+    log(
+      `   컬럼 → 번호=${d.numberCol} 이름=${d.nameCol} 종합의견=${d.opinionCol}${
+        d.opinionLabel ? " (" + d.opinionLabel + ")" : ""
+      } · DataSet=${d.hasDataSet ? "O" : "X"}${d.opinionField ? " 필드=" + d.opinionField : ""}`,
+      "info"
+    );
     (d.preview || []).forEach((row, i) => log(`   행${i}: ${JSON.stringify(row)}`));
     log("종합의견 컬럼이 틀리면 위 인덱스를 보고 '종합의견 컬럼'에 직접 입력하세요.", "info");
     return;
@@ -387,7 +392,29 @@ function neisGridAction(action, payload) {
       break;
     }
   }
-  // 종합의견 컬럼: 수동지정 우선, 없으면 번호/이름/버튼 제외한 가장 넓은 컬럼
+  // 컬럼 헤더 텍스트 추출 (getInitConfig) — '종합의견/특기사항' 라벨·데이터필드명 파악(인덱스 무관)
+  let colHeaders = [];
+  try {
+    const cfg = grid.getInitConfig && grid.getInitConfig();
+    const cand = cfg && (cfg.columns || cfg.columnInfos || cfg.cols || cfg.body || cfg.header);
+    if (Array.isArray(cand))
+      colHeaders = cand.map((cd) => ({
+        text: String((cd && (cd.text || cd.title || cd.headerText)) || "").replace(/\s+/g, " ").trim(),
+        field: cd && (cd.column || cd.dataField || cd.bindColumn || cd.value || cd.name),
+      }));
+  } catch (e) {}
+  // 화면 제목이자 3번째 열 제목이 될 라벨 + DataSet 필드명 (헤더 텍스트로 탐색 → 컬럼 인덱스와 무관)
+  let opinionLabel = "";
+  let opinionField = null;
+  for (const h of colHeaders) {
+    if (h.text && /종합의견|특기사항/.test(h.text)) {
+      opinionLabel = h.text;
+      if (typeof h.field === "string") opinionField = h.field;
+      break;
+    }
+  }
+
+  // 종합의견 컬럼(인덱스): 수동지정 우선, 없으면 번호/이름/버튼 제외한 가장 넓은 컬럼
   let opinionCol = -1;
   if (payload && payload.opinionCol != null && payload.opinionCol !== "") {
     opinionCol = parseInt(payload.opinionCol, 10);
@@ -406,7 +433,62 @@ function neisGridAction(action, payload) {
     }
     opinionCol = best >= 0 ? best : colCount - 1;
   }
-  const detected = { rowCount, colCount, numberCol, nameCol, opinionCol };
+  if (opinionField == null && colHeaders[opinionCol] && typeof colHeaders[opinionCol].field === "string")
+    opinionField = colHeaders[opinionCol].field;
+  if (!opinionLabel && colHeaders[opinionCol]) opinionLabel = colHeaders[opinionCol].text || "";
+
+  // 바인딩 DataSet 탐색 — setCellValue가 화면만 바꾸고 DataSet에 반영 안 되는 그리드 대응
+  const isDSLike = (o) =>
+    o &&
+    typeof o === "object" &&
+    typeof o.getValue === "function" &&
+    typeof o.setValue === "function" &&
+    typeof o.getRowCount === "function" &&
+    typeof o.getColumnNames === "function";
+  let ds = null;
+  try {
+    const proto = Object.getPrototypeOf(grid);
+    const names = Object.getOwnPropertyNames(proto).filter(
+      (n) => /^get[A-Z]/.test(n) && typeof grid[n] === "function" && grid[n].length === 0
+    );
+    for (const n of names) {
+      let v;
+      try {
+        v = grid[n]();
+      } catch (e) {
+        continue;
+      }
+      if (isDSLike(v)) {
+        ds = v;
+        break;
+      }
+      if (v && typeof v === "object") {
+        for (const m of ["getDataSet", "getDataObject", "getData", "getBindDataSet", "getDataProvider"]) {
+          if (typeof v[m] === "function") {
+            try {
+              const d = v[m]();
+              if (isDSLike(d)) {
+                ds = d;
+                break;
+              }
+            } catch (e) {}
+          }
+        }
+      }
+      if (ds) break;
+    }
+  } catch (e) {}
+
+  const detected = {
+    rowCount,
+    colCount,
+    numberCol,
+    nameCol,
+    opinionCol,
+    opinionLabel,
+    opinionField: opinionField || "",
+    hasDataSet: !!ds,
+  };
 
   if (action === "scan") {
     const preview = [];
@@ -445,7 +527,7 @@ function neisGridAction(action, payload) {
       if (name === "" && number === "") continue;
       list.push({ number, name });
     }
-    return { ok: true, detected, roster: list };
+    return { ok: true, detected, roster: list, opinionLabel };
   }
 
   if (action === "fill") {
@@ -468,6 +550,7 @@ function neisGridAction(action, payload) {
     window.__neisAutofillUndo = window.__neisAutofillUndo || [];
     let filled = 0;
     const unmatched = [];
+    const notReflected = [];
     const overLimit = [];
     const used = {};
     for (let i = 0; i < data.length; i++) {
@@ -508,17 +591,50 @@ function neisGridAction(action, payload) {
       // 이어쓰기: 기존 내용이 있으면 구분자 넣고 뒤에 추가
       const newVal =
         append && prevS.trim() !== "" ? prevS + sep + item.content : item.content;
-      window.__neisAutofillUndo.push({ row: gr, col: opinionCol, prev });
+      window.__neisAutofillUndo.push({ row: gr, col: opinionCol, field: opinionField, prev });
+      // 1) 바인딩 DataSet에 직접 쓰기(글자수·저장 반영 보장)  2) 표준 API로 화면 갱신
+      if (ds && opinionField) {
+        try {
+          ds.setValue(gr, opinionField, newVal);
+        } catch (e) {}
+      }
       try {
         grid.setCellValue(gr, opinionCol, newVal);
+      } catch (e) {}
+      // 실제 셀 값이 바뀌었는지 확인 (화면 기준)
+      let after;
+      try {
+        after = grid.getCellValue(gr, opinionCol);
+      } catch (e) {}
+      if (after == null && ds && opinionField) {
+        try {
+          after = ds.getValue(gr, opinionField);
+        } catch (e) {}
+      }
+      if (String(after) === String(newVal)) {
         filled++;
         if (limit > 0 && nbytes(newVal) > limit)
           overLimit.push((item.name || item.number || "#" + (i + 1)) + `(${nbytes(newVal)}b)`);
-      } catch (e) {
-        unmatched.push((item.name || item.number) + ":err");
+      } else {
+        notReflected.push(item.name || item.number || "#" + (i + 1));
       }
     }
-    return { ok: true, detected, filled, unmatched, overLimit, append };
+    const result = { ok: true, detected, filled, unmatched, notReflected, overLimit, append };
+    // 반영이 하나도 안 됐으면 그리드 쓰기 API 진단 정보 첨부(원인 파악용)
+    if (notReflected.length && filled === 0) {
+      try {
+        const proto = Object.getPrototypeOf(grid);
+        result.diag = {
+          hasDataSet: !!ds,
+          opinionField: opinionField || "",
+          headers: colHeaders.map((h) => h.text).filter(Boolean).slice(0, 20),
+          writeMethods: Object.getOwnPropertyNames(proto)
+            .filter((n) => /set|commit|update|value|refresh/i.test(n) && typeof grid[n] === "function")
+            .slice(0, 40),
+        };
+      } catch (e) {}
+    }
+    return result;
   }
 
   if (action === "undo") {
@@ -528,6 +644,11 @@ function neisGridAction(action, payload) {
     for (let i = store.length - 1; i >= 0; i--) {
       const u = store[i];
       try {
+        if (ds && u.field) {
+          try {
+            ds.setValue(u.row, u.field, u.prev);
+          } catch (e) {}
+        }
         grid.setCellValue(u.row, u.col, u.prev);
         n++;
       } catch (e) {
@@ -591,13 +712,20 @@ $("btnFill").addEventListener("click", async () => {
   if (g && g.ok) {
     const d = g.detected;
     log(
-      `✅ 나이스 그리드 입력: ${g.filled}건${append ? " (이어쓰기)" : ""} (번호=${d.numberCol} 이름=${d.nameCol} 종합의견=${d.opinionCol})`,
+      `✅ 나이스 그리드 입력: ${g.filled}건${append ? " (이어쓰기)" : ""} (종합의견 컬럼=${d.opinionCol}${
+        d.opinionLabel ? " " + d.opinionLabel : ""
+      })`,
       "info"
     );
     if (g.unmatched && g.unmatched.length)
       log(`매칭 실패 ${g.unmatched.length}건: ${g.unmatched.join(", ")}`, "err");
-    if (g.overLimit && g.overLimit.length)
-      log(`⚠ 바이트 초과 ${g.overLimit.length}건: ${g.overLimit.join(", ")}`, "err");
+    if (g.notReflected && g.notReflected.length)
+      log(`⚠ 셀 반영 실패 ${g.notReflected.length}건: ${g.notReflected.join(", ")}`, "err");
+    if (g.diag)
+      log(
+        `   [진단] DataSet=${g.diag.hasDataSet} 필드=${g.diag.opinionField || "-"} · 헤더=[${(g.diag.headers || []).join(", ")}] · 쓰기메서드=[${(g.diag.writeMethods || []).join(", ")}]`,
+        "err"
+      );
     log("값 확인 후 나이스에서 [저장]을 누르세요. 잘못되면 되돌리기.", "info");
     return;
   }
@@ -776,10 +904,13 @@ $("btnTemplate").addEventListener("click", async () => {
   try {
     const g = await runGrid("roster");
     if (g && g.ok && g.roster && g.roster.length) {
-      const rows = [TEMPLATE_HEADER, ...g.roster.map((s) => [s.number, s.name, ""])];
-      downloadTemplate(rows, "NEIS_종합의견_템플릿(명단채움).xlsx");
+      // 3번째 열 제목: 현재 화면의 종합의견 컬럼 헤더(예: '행동특성 및 종합의견'). 못 읽으면 기본값.
+      const label = (g.opinionLabel || "").trim() || "학기말 종합의견";
+      const rows = [["번호", "이름", label], ...g.roster.map((s) => [s.number, s.name, ""])];
+      const safe = label.replace(/[\\/:*?"<>|]/g, "").replace(/\s+/g, "");
+      downloadTemplate(rows, `NEIS_${safe}_템플릿(명단채움).xlsx`);
       log(
-        `✅ [학기말 종합의견] 화면 명단 ${g.roster.length}명(번호·이름)을 템플릿에 채웠습니다. 종합의견 칸만 입력해 다시 올리면 이름으로 매칭됩니다.`,
+        `✅ [${label}] 화면 명단 ${g.roster.length}명(번호·이름)을 템플릿에 채웠습니다. ${label} 칸만 입력해 다시 올리면 이름으로 매칭됩니다.`,
         "info"
       );
       return;

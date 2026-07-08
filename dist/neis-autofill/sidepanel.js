@@ -389,8 +389,28 @@ function neisGridAction(action, payload) {
     return -1;
   };
 
-  // 번호 컬럼: 헤더 '번호/학번'(단 '순번' 제외) 우선 → 없으면 표본 1,2,3,… 휴리스틱
+  // 이름 컬럼 먼저: 헤더 '성명/이름' 우선 → 없으면 첫 '비숫자 텍스트' 컬럼(=성명)
+  let nameCol = findByHeader(/성명|이름/);
+  if (nameCol < 0) {
+    for (let c = 0; c < colCount; c++) {
+      if (isButtonCol(colS[c])) continue;
+      if (colS[c].some((x) => x && !/^\d+$/.test(x))) {
+        nameCol = c;
+        break;
+      }
+    }
+  }
+
+  // 번호 컬럼: 헤더 '번호/학번'(순번 제외) > 성명 바로 왼쪽의 숫자 컬럼 > 표본 1,2,3,… 컬럼
+  const numericCol = (c) => {
+    const ne = (colS[c] || []).filter((x) => x !== "");
+    return ne.length > 0 && ne.every((x) => /^\d+$/.test(x));
+  };
   let numberCol = findByHeader(/번호|학번/, /순번/);
+  if (numberCol < 0 && nameCol > 0 && numericCol(nameCol - 1)) {
+    // 성명 왼쪽 숫자 컬럼 = 번호 (순번이 그 왼쪽에 따로 있어도 정확)
+    numberCol = nameCol - 1;
+  }
   if (numberCol < 0) {
     for (let c = 0; c < colCount; c++) {
       const s = colS[c];
@@ -403,17 +423,6 @@ function neisGridAction(action, payload) {
       }
       if (ok) {
         numberCol = c;
-        break;
-      }
-    }
-  }
-  // 이름 컬럼: 헤더 '성명/이름' 우선 → 없으면 번호 다음의 버튼 아닌 텍스트 컬럼
-  let nameCol = findByHeader(/성명|이름/);
-  if (nameCol < 0) {
-    for (let c = numberCol >= 0 ? numberCol + 1 : 0; c < colCount; c++) {
-      if (isButtonCol(colS[c])) continue;
-      if (colS[c].some((x) => x && !/^\d+$/.test(x))) {
-        nameCol = c;
         break;
       }
     }

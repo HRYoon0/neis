@@ -480,7 +480,61 @@ function deepProbe() {
           gd.preview.push(tr);
           gd.previewVal.push(vr);
         }
+        // 셀 텍스트/값을 더 많은 행(7행)까지 + 컬럼 메타(getCellInfo)
+        gd.moreRows = [];
+        for (let r = 0; r < Math.min(gd.dataRowCount || 0, 7); r++) {
+          const tr = [];
+          for (let c = 0; c < cols; c++) {
+            const t = T(() => grid.getCellText(r, c));
+            const v = T(() => grid.getCellValue(r, c));
+            tr.push((t == null ? "" : String(t).slice(0, 12)) + "|" + (v == null ? "" : String(v).slice(0, 12)));
+          }
+          gd.moreRows.push(tr);
+        }
+        gd.cellInfo = [];
+        for (let c = 0; c < cols; c++) {
+          const ci = T(() => grid.getCellInfo(0, c));
+          if (ci && typeof ci === "object") {
+            gd.cellInfo.push({
+              c,
+              keys: Object.keys(ci).slice(0, 10),
+              field: ci.dataField || ci.column || ci.name || ci.id,
+              type: ci.type || ci.cellType || ci.editType,
+            });
+          }
+        }
         out.cpr.gridData = gd;
+
+        // 창의적체험활동용: 그리드 영역 안의 편집 가능한 입력상자(특기사항) 탐지 + 주변 라벨(영역)
+        try {
+          const ta = [];
+          const inputs = document.querySelectorAll("textarea, input, [contenteditable='true']");
+          inputs.forEach((el) => {
+            const r = el.getBoundingClientRect();
+            if (r.width < 40 || r.height < 12 || r.top < 0 || r.top > innerHeight) return;
+            // 주변(조상) 텍스트에서 영역 이름 후보 수집
+            let near = "";
+            let p = el.parentElement;
+            for (let d = 0; d < 5 && p; d++, p = p.parentElement) {
+              const t = (p.textContent || "").replace(/\s+/g, " ").trim();
+              if (t && t.length < 40) {
+                near = t;
+                break;
+              }
+            }
+            ta.push({
+              tag: el.tagName.toLowerCase() + (el.type ? "[" + el.type + "]" : ""),
+              x: Math.round(r.left),
+              y: Math.round(r.top),
+              w: Math.round(r.width),
+              val: (el.value || el.textContent || "").slice(0, 12),
+              near: near.slice(0, 30),
+            });
+          });
+          out.cpr.editBoxes = ta.slice(0, 30);
+        } catch (e) {
+          out.cpr.editBoxesErr = String(e && e.message);
+        }
       }
 
       // DataSet 덕타이핑
@@ -672,8 +726,28 @@ function neisGridAction(action, payload) {
     return -1;
   };
 
-  // 번호 컬럼: 헤더 '번호/학번'(단 '순번' 제외) 우선 → 없으면 표본 1,2,3,… 휴리스틱
+  // 이름 컬럼 먼저: 헤더 '성명/이름' 우선 → 없으면 첫 '비숫자 텍스트' 컬럼(=성명)
+  let nameCol = findByHeader(/성명|이름/);
+  if (nameCol < 0) {
+    for (let c = 0; c < colCount; c++) {
+      if (isButtonCol(colS[c])) continue;
+      if (colS[c].some((x) => x && !/^\d+$/.test(x))) {
+        nameCol = c;
+        break;
+      }
+    }
+  }
+
+  // 번호 컬럼: 헤더 '번호/학번'(순번 제외) > 성명 바로 왼쪽의 숫자 컬럼 > 표본 1,2,3,… 컬럼
+  const numericCol = (c) => {
+    const ne = (colS[c] || []).filter((x) => x !== "");
+    return ne.length > 0 && ne.every((x) => /^\d+$/.test(x));
+  };
   let numberCol = findByHeader(/번호|학번/, /순번/);
+  if (numberCol < 0 && nameCol > 0 && numericCol(nameCol - 1)) {
+    // 성명 왼쪽 숫자 컬럼 = 번호 (순번이 그 왼쪽에 따로 있어도 정확)
+    numberCol = nameCol - 1;
+  }
   if (numberCol < 0) {
     for (let c = 0; c < colCount; c++) {
       const s = colS[c];
@@ -686,17 +760,6 @@ function neisGridAction(action, payload) {
       }
       if (ok) {
         numberCol = c;
-        break;
-      }
-    }
-  }
-  // 이름 컬럼: 헤더 '성명/이름' 우선 → 없으면 번호 다음의 버튼 아닌 텍스트 컬럼
-  let nameCol = findByHeader(/성명|이름/);
-  if (nameCol < 0) {
-    for (let c = numberCol >= 0 ? numberCol + 1 : 0; c < colCount; c++) {
-      if (isButtonCol(colS[c])) continue;
-      if (colS[c].some((x) => x && !/^\d+$/.test(x))) {
-        nameCol = c;
         break;
       }
     }
@@ -1077,7 +1140,12 @@ $("btnDeep").addEventListener("click", async () => {
       else if (g.cfgKeys) log(`initConfig keys: ${g.cfgKeys.join(", ")}`);
       (g.preview || []).forEach((row, i) => log(`  text행${i}: ${JSON.stringify(row)}`));
       (g.previewVal || []).forEach((row, i) => log(`  val행${i}: ${JSON.stringify(row)}`));
+      (g.moreRows || []).forEach((row, i) => log(`  행${i}(text|val): ${JSON.stringify(row)}`));
+      if (g.cellInfo && g.cellInfo.length) log(`  cellInfo: ${JSON.stringify(g.cellInfo)}`);
     }
+    if (c.editBoxes)
+      log(`  편집상자 ${c.editBoxes.length}개: ${JSON.stringify(c.editBoxes)}`, "info");
+    if (c.editBoxesErr) log(`  편집상자 탐지 오류: ${c.editBoxesErr}`, "err");
     log(`DataSet 총 ${c.dsTotal ?? 0}개 (predication ${c.predDsCount ?? "-"})`, "info");
     (c.datasets || []).forEach((d, i) => {
       log(`  [DS#${i}] rows=${d.rc} cols=[${d.cols.join(", ")}]`, "info");

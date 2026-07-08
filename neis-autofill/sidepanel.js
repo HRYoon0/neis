@@ -734,6 +734,7 @@ function neisGridAction(action, payload) {
     const names = Object.getOwnPropertyNames(proto).filter(
       (n) => /^get[A-Z]/.test(n) && typeof grid[n] === "function" && grid[n].length === 0
     );
+    const cands = [];
     for (const n of names) {
       let v;
       try {
@@ -741,25 +742,31 @@ function neisGridAction(action, payload) {
       } catch (e) {
         continue;
       }
-      if (isDSLike(v)) {
-        ds = v;
-        break;
-      }
-      if (v && typeof v === "object") {
+      if (isDSLike(v)) cands.push(v);
+      else if (v && typeof v === "object") {
         for (const m of ["getDataSet", "getDataObject", "getData", "getBindDataSet", "getDataProvider"]) {
           if (typeof v[m] === "function") {
             try {
               const d = v[m]();
-              if (isDSLike(d)) {
-                ds = d;
-                break;
-              }
+              if (isDSLike(d)) cands.push(d);
             } catch (e) {}
           }
         }
       }
-      if (ds) break;
     }
+    // 그리드와 행 수가 같은 DataSet 우선 (엉뚱한 코드테이블/룩업 회피)
+    const rcOf = (d) => {
+      try {
+        return d.getRowCount();
+      } catch (e) {
+        return -1;
+      }
+    };
+    ds =
+      cands.find((d) => rcOf(d) === rowCount) ||
+      cands.find((d) => rcOf(d) >= 1 && rcOf(d) <= 400) ||
+      cands[0] ||
+      null;
   } catch (e) {}
 
   const detected = {
@@ -910,6 +917,15 @@ function neisGridAction(action, payload) {
         result.diag = {
           hasDataSet: !!ds,
           opinionField: opinionField || "",
+          dsColumns: ds
+            ? (function () {
+                try {
+                  return ds.getColumnNames().slice(0, 30);
+                } catch (e) {
+                  return [];
+                }
+              })()
+            : [],
           headers: colHeaders.map((h) => h.text).filter(Boolean).slice(0, 20),
           writeMethods: Object.getOwnPropertyNames(proto)
             .filter((n) => /set|commit|update|value|refresh/i.test(n) && typeof grid[n] === "function")
@@ -1064,11 +1080,16 @@ $("btnFill").addEventListener("click", async () => {
       log(`매칭 실패 ${g.unmatched.length}건: ${g.unmatched.join(", ")}`, "err");
     if (g.notReflected && g.notReflected.length)
       log(`⚠ 셀 반영 실패 ${g.notReflected.length}건: ${g.notReflected.join(", ")}`, "err");
-    if (g.diag)
+    if (g.diag) {
       log(
-        `   [진단] DataSet=${g.diag.hasDataSet} 필드=${g.diag.opinionField || "-"} · 헤더=[${(g.diag.headers || []).join(", ")}] · 쓰기메서드=[${(g.diag.writeMethods || []).join(", ")}]`,
+        `   [진단] DataSet=${g.diag.hasDataSet} 필드=${g.diag.opinionField || "-"} · DS컬럼=[${(g.diag.dsColumns || []).join(", ")}]`,
         "err"
       );
+      log(
+        `   [진단] 헤더=[${(g.diag.headers || []).join(", ")}] · 쓰기메서드=[${(g.diag.writeMethods || []).join(", ")}]`,
+        "err"
+      );
+    }
     log("값 확인 후 나이스에서 [저장]을 누르세요. 잘못되면 되돌리기.", "info");
     return;
   }

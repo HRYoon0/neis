@@ -86,7 +86,8 @@ function buildData(text, format) {
   for (const r of rows) {
     let number = null,
       name = null,
-      content = "";
+      content = "",
+      content2 = "";
     if (format === "sequence") {
       content = r.join(" ").trim();
     } else if (format === "number") {
@@ -99,9 +100,15 @@ function buildData(text, format) {
       number = parseInt((r[0] || "").trim(), 10);
       name = (r[1] || "").trim();
       content = r.slice(2).join(" ").trim();
+    } else if (format === "both2") {
+      // 창의적: 번호 · 이름 · 자율·자치활동 · 진로활동
+      number = parseInt((r[0] || "").trim(), 10);
+      name = (r[1] || "").trim();
+      content = (r[2] || "").trim();
+      content2 = (r[3] || "").trim();
     }
-    if (content === "") continue;
-    out.push({ number: isNaN(number) ? null : number, name: name || null, content });
+    if (content === "" && content2 === "") continue;
+    out.push({ number: isNaN(number) ? null : number, name: name || null, content, content2 });
   }
   return out;
 }
@@ -109,7 +116,7 @@ function buildData(text, format) {
 function matchByOf(format) {
   if (format === "sequence") return "sequence";
   if (format === "number") return "number";
-  return "name"; // name, both → 이름 매칭
+  return "name"; // name, both, both2 → 이름 매칭
 }
 
 // ---------- 미리보기 렌더 ----------
@@ -128,8 +135,12 @@ function renderPreview(data, limit) {
       <td>${i + 1}</td>
       <td>${d.number ?? ""}</td>
       <td>${d.name ?? ""}</td>
-      <td class="content">${escapeHtml(d.content.slice(0, 60))}${
-      d.content.length > 60 ? "…" : ""
+      <td class="content">${escapeHtml(d.content.slice(0, 50))}${
+      d.content.length > 50 ? "…" : ""
+    }${
+      d.content2
+        ? `<br><span class="muted">진로: ${escapeHtml(d.content2.slice(0, 50))}${d.content2.length > 50 ? "…" : ""}</span>`
+        : ""
     }</td>
       <td class="${over ? "over" : ""}">${b}${over ? " ⚠" : ""}</td>
     </tr>`;
@@ -797,8 +808,12 @@ function neisGridAction(action, payload) {
       const els = document.querySelectorAll("span,div,td,th,a,strong,b,label,h1,h2,h3,li");
       for (const el of els) {
         if (el.children.length) continue;
-        const t = (el.textContent || "").replace(/\s+/g, " ").trim();
-        if (!t || t.length > 20 || !/종합의견|특기사항/.test(t)) continue;
+        const raw = (el.textContent || "").replace(/\s+/g, " ").trim();
+        if (!raw || raw.length > 20) continue;
+        // 'A - B' 형태면 앞부분만 (예: '행동특성 및 종합의견 - 학교생활기록부 반영기록')
+        const t = raw.replace(/\s*-\s*.*$/, "").trim();
+        // 진짜 컬럼 제목은 '…종합의견/특기사항'으로 끝남 → 버튼(…가져오기)·상태(…열림) 배제
+        if (!/(종합의견|특기사항)$/.test(t)) continue;
         const r = el.getBoundingClientRect();
         if (r.width < 1 || r.height < 1) continue;
         if (r.top < bestTop) {
@@ -806,7 +821,7 @@ function neisGridAction(action, payload) {
           best = t;
         }
       }
-      if (best) opinionLabel = best.replace(/\s*-\s*.*$/, "").trim();
+      if (best) opinionLabel = best;
     } catch (e) {}
   }
 
@@ -942,7 +957,9 @@ function neisGridAction(action, payload) {
       seen.add(key);
       roster.push(it);
     }
-    return { ok: true, detected, roster, opinionLabel };
+    // 학생당 여러 행이면(창의적체험활동) 2칸 입력 대상
+    const multiRow = list.length > roster.length;
+    return { ok: true, detected, roster, opinionLabel, multiRow };
   }
 
   if (action === "fill") {
@@ -968,6 +985,48 @@ function neisGridAction(action, payload) {
     const notReflected = [];
     const overLimit = [];
     const used = {};
+    // 한 셀에 값 기록(이어쓰기·DataSet직접쓰기·표준API·반영확인). 반영됐으면 true.
+    const writeCell = (row, content) => {
+      const prev = T(() => grid.getCellValue(row, opinionCol), "");
+      const prevS = prev == null ? "" : String(prev);
+      const newVal = append && prevS.trim() !== "" ? prevS + sep + content : content;
+      window.__neisAutofillUndo.push({ row, col: opinionCol, field: opinionField, prev });
+      if (ds && opinionField) {
+        try {
+          ds.setValue(row, opinionField, newVal);
+        } catch (e) {}
+      }
+      try {
+        grid.setCellValue(row, opinionCol, newVal);
+        try {
+          grid.updateRow(row);
+        } catch (e) {}
+      } catch (e) {}
+      let after;
+      try {
+        after = grid.getCellValue(row, opinionCol);
+      } catch (e) {}
+      if (after == null && ds && opinionField) {
+        try {
+          after = ds.getValue(row, opinionField);
+        } catch (e) {}
+      }
+      return { reflected: String(after) === String(newVal), newVal };
+    };
+    // 학생 블록의 마지막 행 찾기(창의적: 진로활동 = 같은 학생 연속 행의 끝)
+    const lastRowOfStudent = (gr) => {
+      if (nameCol < 0) return gr;
+      const baseName = norm(cellT(gr, nameCol));
+      const baseNum = numberCol >= 0 ? String(parseInt(cellT(gr, numberCol), 10)) : "";
+      let last = gr;
+      for (let r = gr + 1; r < rowCount; r++) {
+        const sameName = norm(cellT(r, nameCol)) === baseName;
+        const sameNum = numberCol >= 0 ? String(parseInt(cellT(r, numberCol), 10)) === baseNum : true;
+        if (sameName && sameNum) last = r;
+        else break;
+      }
+      return last;
+    };
     for (let i = 0; i < data.length; i++) {
       const item = data[i];
       let gr = -1;
@@ -1001,40 +1060,26 @@ function neisGridAction(action, payload) {
         continue;
       }
       used[gr] = true;
-      const prev = T(() => grid.getCellValue(gr, opinionCol), "");
-      const prevS = prev == null ? "" : String(prev);
-      // 이어쓰기: 기존 내용이 있으면 구분자 넣고 뒤에 추가
-      const newVal =
-        append && prevS.trim() !== "" ? prevS + sep + item.content : item.content;
-      window.__neisAutofillUndo.push({ row: gr, col: opinionCol, field: opinionField, prev });
-      // 1) 바인딩 DataSet에 직접 쓰기(글자수·저장 반영 보장)  2) 표준 API로 화면 갱신
-      if (ds && opinionField) {
-        try {
-          ds.setValue(gr, opinionField, newVal);
-        } catch (e) {}
-      }
-      try {
-        grid.setCellValue(gr, opinionCol, newVal);
-        try {
-          grid.updateRow(gr); // 렌더 갱신(글자수 등 표시 반영 유도)
-        } catch (e) {}
-      } catch (e) {}
-      // 실제 셀 값이 바뀌었는지 확인 (화면 기준)
-      let after;
-      try {
-        after = grid.getCellValue(gr, opinionCol);
-      } catch (e) {}
-      if (after == null && ds && opinionField) {
-        try {
-          after = ds.getValue(gr, opinionField);
-        } catch (e) {}
-      }
-      if (String(after) === String(newVal)) {
+      // 1칸(자율·자치활동 = 학생 첫 행)에 content 기록
+      const w1 = writeCell(gr, item.content);
+      if (w1.reflected) {
         filled++;
-        if (limit > 0 && nbytes(newVal) > limit)
-          overLimit.push((item.name || item.number || "#" + (i + 1)) + `(${nbytes(newVal)}b)`);
+        if (limit > 0 && nbytes(w1.newVal) > limit)
+          overLimit.push((item.name || item.number || "#" + (i + 1)) + `(${nbytes(w1.newVal)}b)`);
       } else {
         notReflected.push(item.name || item.number || "#" + (i + 1));
+      }
+      // 창의적 2칸: content2가 있으면 같은 학생의 마지막 행(진로활동)에 기록
+      if (item.content2 != null && String(item.content2).trim() !== "" && nameCol >= 0) {
+        const last = lastRowOfStudent(gr);
+        if (last !== gr) {
+          used[last] = true;
+          const w2 = writeCell(last, item.content2);
+          if (w2.reflected) filled++;
+          else notReflected.push((item.name || item.number || "#" + (i + 1)) + ":진로");
+        } else {
+          notReflected.push((item.name || item.number || "#" + (i + 1)) + ":진로행없음");
+        }
       }
     }
     const result = { ok: true, detected, filled, unmatched, notReflected, overLimit, append };
@@ -1331,13 +1376,17 @@ function detectFormat(aoa) {
   if (hasHeader) {
     const hasNo = head.some((h) => h.includes("번호"));
     const hasName = head.some((h) => h.includes("이름") || h.includes("성명"));
-    if (hasNo && hasName) format = "both";
+    // 창의적: 번호·이름 + 내용 2열 이상(진로활동/자율·자치활동 등)
+    const isChangwi = head.some((h) => h.includes("진로활동") || h.includes("자율")) && width >= 4;
+    if (isChangwi && hasNo && hasName) format = "both2";
+    else if (hasNo && hasName) format = "both";
     else if (hasNo) format = "number";
     else if (hasName) format = "name";
     else format = "sequence";
   } else {
     // 헤더 없으면 열 개수로 추정
-    if (width >= 3) format = "both";
+    if (width >= 4) format = "both2";
+    else if (width === 3) format = "both";
     else if (width === 2) format = "number";
     else format = "sequence";
   }
@@ -1396,7 +1445,11 @@ const TEMPLATE_HEADER = ["번호", "이름", "학기말 종합의견"];
 function downloadTemplate(rows, filename) {
   const wb = XLSX.utils.book_new();
   const ws = XLSX.utils.aoa_to_sheet(rows);
-  ws["!cols"] = [{ wch: 6 }, { wch: 10 }, { wch: 80 }];
+  const ncol = (rows[0] || []).length;
+  // 번호·이름 좁게, 내용 열은 넓게 (4열 창의적이면 내용 2열)
+  ws["!cols"] = [{ wch: 6 }, { wch: 10 }].concat(
+    Array.from({ length: Math.max(1, ncol - 2) }, () => ({ wch: ncol >= 4 ? 55 : 80 }))
+  );
   XLSX.utils.book_append_sheet(wb, ws, "입력");
   XLSX.writeFile(wb, filename);
 }
@@ -1406,6 +1459,20 @@ $("btnTemplate").addEventListener("click", async () => {
   try {
     const g = await runGrid("roster");
     if (g && g.ok && g.roster && g.roster.length) {
+      if (g.multiRow) {
+        // 창의적체험활동: 학생당 여러 영역 행 → 자율·자치활동 + 진로활동 2칸 템플릿
+        const rows = [
+          ["번호", "이름", "자율·자치활동 동아리활동", "진로활동"],
+          ...g.roster.map((s) => [s.number, s.name, "", ""]),
+        ];
+        downloadTemplate(rows, "NEIS_창의적체험활동_템플릿(명단채움).xlsx");
+        $("format").value = "both2";
+        log(
+          `✅ 창의적체험활동 명단 ${g.roster.length}명을 채웠습니다. [자율·자치활동 동아리활동]·[진로활동] 두 칸을 입력해 다시 올리면 각 영역에 자동입력됩니다. (입력 방식이 '창의적'으로 설정됨)`,
+          "info"
+        );
+        return;
+      }
       // 3번째 열 제목: 현재 화면의 종합의견 컬럼 헤더(예: '행동특성 및 종합의견'). 못 읽으면 기본값.
       const label = (g.opinionLabel || "").trim() || "학기말 종합의견";
       const rows = [["번호", "이름", label], ...g.roster.map((s) => [s.number, s.name, ""])];

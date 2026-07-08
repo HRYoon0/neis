@@ -650,32 +650,7 @@ function neisGridAction(action, payload) {
     const ne = s.filter((x) => x !== "");
     return ne.length >= 2 && ne.every((x) => x === ne[0]);
   };
-  // 번호 컬럼: 표본이 1,2,3,... 인 컬럼
-  let numberCol = -1;
-  for (let c = 0; c < colCount; c++) {
-    const s = colS[c];
-    let ok = s.length > 0;
-    for (let i = 0; i < s.length; i++) {
-      if (String(parseInt(s[i], 10)) !== String(i + 1)) {
-        ok = false;
-        break;
-      }
-    }
-    if (ok) {
-      numberCol = c;
-      break;
-    }
-  }
-  // 이름 컬럼: 번호 다음의, 버튼 아닌 텍스트 컬럼
-  let nameCol = -1;
-  for (let c = numberCol >= 0 ? numberCol + 1 : 0; c < colCount; c++) {
-    if (isButtonCol(colS[c])) continue;
-    if (colS[c].some((x) => x && !/^\d+$/.test(x))) {
-      nameCol = c;
-      break;
-    }
-  }
-  // 컬럼 헤더 텍스트 추출 (getInitConfig) — '종합의견/특기사항' 라벨·데이터필드명 파악(인덱스 무관)
+  // 컬럼 헤더 텍스트 추출 (getInitConfig) — 헤더 '이름표'로 컬럼 식별(내용 추측보다 정확)
   let colHeaders = [];
   try {
     const cfg = grid.getInitConfig && grid.getInitConfig();
@@ -686,7 +661,48 @@ function neisGridAction(action, payload) {
         field: cd && (cd.column || cd.dataField || cd.bindColumn || cd.value || cd.name),
       }));
   } catch (e) {}
-  // 화면 제목이자 3번째 열 제목이 될 라벨 + DataSet 필드명 (헤더 텍스트로 탐색 → 컬럼 인덱스와 무관)
+  // colHeaders 인덱스가 cellText 인덱스와 정렬됐다고 볼 수 있을 때만 헤더로 인덱스를 특정
+  const headerAligned = colHeaders.length === colCount;
+  const findByHeader = (re, avoid) => {
+    if (!headerAligned) return -1;
+    for (let c = 0; c < colCount; c++) {
+      const t = colHeaders[c] && colHeaders[c].text;
+      if (t && re.test(t) && !(avoid && avoid.test(t))) return c;
+    }
+    return -1;
+  };
+
+  // 번호 컬럼: 헤더 '번호/학번'(단 '순번' 제외) 우선 → 없으면 표본 1,2,3,… 휴리스틱
+  let numberCol = findByHeader(/번호|학번/, /순번/);
+  if (numberCol < 0) {
+    for (let c = 0; c < colCount; c++) {
+      const s = colS[c];
+      let ok = s.length > 0;
+      for (let i = 0; i < s.length; i++) {
+        if (String(parseInt(s[i], 10)) !== String(i + 1)) {
+          ok = false;
+          break;
+        }
+      }
+      if (ok) {
+        numberCol = c;
+        break;
+      }
+    }
+  }
+  // 이름 컬럼: 헤더 '성명/이름' 우선 → 없으면 번호 다음의 버튼 아닌 텍스트 컬럼
+  let nameCol = findByHeader(/성명|이름/);
+  if (nameCol < 0) {
+    for (let c = numberCol >= 0 ? numberCol + 1 : 0; c < colCount; c++) {
+      if (isButtonCol(colS[c])) continue;
+      if (colS[c].some((x) => x && !/^\d+$/.test(x))) {
+        nameCol = c;
+        break;
+      }
+    }
+  }
+
+  // 종합의견/특기사항 라벨 + DataSet 필드명 (헤더 텍스트로 탐색 → 인덱스 무관)
   let opinionLabel = "";
   let opinionField = null;
   for (const h of colHeaders) {
@@ -697,10 +713,13 @@ function neisGridAction(action, payload) {
     }
   }
 
-  // 종합의견 컬럼(인덱스): 수동지정 우선, 없으면 번호/이름/버튼 제외한 가장 넓은 컬럼
+  // 종합의견 컬럼(인덱스): 수동지정 > 헤더 '특기사항/종합의견' > 번호/이름/버튼 제외 최대폭
   let opinionCol = -1;
   if (payload && payload.opinionCol != null && payload.opinionCol !== "") {
     opinionCol = parseInt(payload.opinionCol, 10);
+  }
+  if (!(opinionCol >= 0 && opinionCol < colCount)) {
+    opinionCol = findByHeader(/특기사항|종합의견/);
   }
   if (!(opinionCol >= 0 && opinionCol < colCount)) {
     let best = -1,
@@ -817,7 +836,16 @@ function neisGridAction(action, payload) {
       if (name === "" && number === "") continue;
       list.push({ number, name });
     }
-    return { ok: true, detected, roster: list, opinionLabel };
+    // 학생 중복 제거: 창의적체험활동처럼 한 학생이 여러 영역 행을 가지면 이름이 반복됨 → 1명으로
+    const seen = new Set();
+    const roster = [];
+    for (const it of list) {
+      const key = String(it.number) + "|" + String(it.name);
+      if (seen.has(key)) continue;
+      seen.add(key);
+      roster.push(it);
+    }
+    return { ok: true, detected, roster, opinionLabel };
   }
 
   if (action === "fill") {

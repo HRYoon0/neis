@@ -2,40 +2,29 @@
 <html>
   <head>
     <meta charset="utf-8" />
-    <style>
-      html,body{margin:0;background:#0000}
-      svg{display:block}
-    </style>
+    <style>html,body{margin:0;background:#0000}svg{display:block}</style>
   </head>
   <body>
     <svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stop-color="#f39aae" />
-          <stop offset="0.55" stop-color="#e05a78" />
-          <stop offset="1" stop-color="#c23e5c" />
+          <stop offset="0" stop-color="#ef7b95" />
+          <stop offset="0.55" stop-color="#dc5273" />
+          <stop offset="1" stop-color="#bb3455" />
         </linearGradient>
-        <radialGradient id="gloss" cx="0.3" cy="0.15" r="0.9">
-          <stop offset="0" stop-color="#ffffff" stop-opacity="0.30" />
-          <stop offset="0.5" stop-color="#ffffff" stop-opacity="0" />
-        </radialGradient>
         <filter id="ds" x="-30%" y="-30%" width="160%" height="160%">
-          <feDropShadow dx="0" dy="8" stdDeviation="11" flood-color="#5a1020" flood-opacity="0.30" />
+          <feDropShadow dx="0" dy="10" stdDeviation="10" flood-color="#5a0f22" flood-opacity="0.28" />
         </filter>
       </defs>
-
-      <!-- 배경 스퀘어클 (로즈) -->
-      <rect width="512" height="512" rx="118" fill="url(#bg)" />
-      <rect width="512" height="512" rx="118" fill="url(#gloss)" />
-
-      <!-- 텍스트 3줄 + 반짝임(자동으로 쉽게 채움) -->
+      <rect width="512" height="512" rx="112" fill="url(#bg)" />
+      <!-- 굵은 텍스트 3줄 + 큰 반짝임 -->
       <g filter="url(#ds)">
         <g fill="#ffffff">
-          <rect x="146" y="212" width="196" height="30" rx="15" />
-          <rect x="146" y="266" width="228" height="30" rx="15" />
-          <rect x="146" y="320" width="150" height="30" rx="15" />
+          <rect x="118" y="198" width="236" height="54" rx="27" />
+          <rect x="118" y="282" width="272" height="54" rx="27" />
+          <rect x="118" y="366" width="180" height="54" rx="27" />
         </g>
-        <path fill="#ffffff" d="M372 132 L385 165 L418 178 L385 191 L372 224 L359 191 L326 178 L359 165 Z" />
+        <path fill="#ffffff" d="M398 92 L416 138 L462 156 L416 174 L398 220 L380 174 L334 156 L380 138 Z" />
       </g>
     </svg>
   </body>

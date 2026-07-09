@@ -1,0 +1,128 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      html,body{margin:0;background:#f4efe7;font-family:system-ui,"Malgun Gothic",sans-serif}
+      .sheet{width:900px;padding:28px 24px 34px;box-sizing:border-box}
+      h2{margin:0 0 20px;color:#3b2f26;font-size:20px}
+      .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
+      .card{background:#fff;border:1px solid #e7dccb;border-radius:16px;padding:16px;text-align:center}
+      .row{display:flex;align-items:center;justify-content:center;gap:14px}
+      .num{display:inline-block;background:#c85f34;color:#fff;font-weight:800;font-size:13px;
+        width:22px;height:22px;line-height:22px;border-radius:50%;margin-bottom:10px}
+      .label{margin-top:12px;color:#5b4a3d;font-size:13px;font-weight:700}
+      .mini{filter:drop-shadow(0 1px 1px rgba(0,0,0,.15))}
+      svg{display:block}
+    </style>
+  </head>
+  <body>
+    <div class="sheet">
+      <h2>아이콘 후보 — 텍스트를 쉽게 넣는 느낌 (왼쪽 큰 것 / 오른쪽 16px 느낌)</h2>
+      <svg width="0" height="0" style="position:absolute">
+        <defs>
+          <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#e79a49" /><stop offset="0.55" stop-color="#c85f34" /><stop offset="1" stop-color="#a8482a" />
+          </linearGradient>
+          <radialGradient id="gloss" cx="0.3" cy="0.15" r="0.9">
+            <stop offset="0" stop-color="#fff" stop-opacity="0.30" /><stop offset="0.5" stop-color="#fff" stop-opacity="0" />
+          </radialGradient>
+          <filter id="ds" x="-30%" y="-30%" width="160%" height="160%">
+            <feDropShadow dx="0" dy="8" stdDeviation="11" flood-color="#5a2410" flood-opacity="0.28" />
+          </filter>
+
+          <!-- 1. 텍스트 3줄 + 반짝임(자동) -->
+          <symbol id="opt1" viewBox="0 0 512 512">
+            <rect width="512" height="512" rx="118" fill="url(#bg)" /><rect width="512" height="512" rx="118" fill="url(#gloss)" />
+            <g filter="url(#ds)">
+              <g fill="#fff">
+                <rect x="146" y="212" width="196" height="30" rx="15" />
+                <rect x="146" y="266" width="228" height="30" rx="15" />
+                <rect x="146" y="320" width="150" height="30" rx="15" />
+              </g>
+              <path fill="#fff" d="M372 132 L385 165 L418 178 L385 191 L372 224 L359 191 L326 178 L359 165 Z" />
+            </g>
+          </symbol>
+
+          <!-- 2. 짧은 텍스트 + 큰 반짝임(마법처럼) -->
+          <symbol id="opt2" viewBox="0 0 512 512">
+            <rect width="512" height="512" rx="118" fill="url(#bg)" /><rect width="512" height="512" rx="118" fill="url(#gloss)" />
+            <g filter="url(#ds)" fill="#fff">
+              <rect x="132" y="258" width="176" height="32" rx="16" />
+              <rect x="132" y="316" width="132" height="32" rx="16" />
+              <path d="M338 128 L364 194 L430 220 L364 246 L338 312 L312 246 L246 220 L312 194 Z" />
+            </g>
+          </symbol>
+
+          <!-- 3. 입력칸(밑줄)에 텍스트 + 반짝임 -->
+          <symbol id="opt3" viewBox="0 0 512 512">
+            <rect width="512" height="512" rx="118" fill="url(#bg)" /><rect width="512" height="512" rx="118" fill="url(#gloss)" />
+            <g filter="url(#ds)" fill="#fff">
+              <rect x="150" y="212" width="168" height="28" rx="14" />
+              <rect x="150" y="262" width="120" height="28" rx="14" />
+              <rect x="150" y="322" width="236" height="14" rx="7" fill-opacity="0.85" />
+              <path d="M360 176 L372 205 L401 217 L372 229 L360 258 L348 229 L319 217 L348 205 Z" />
+            </g>
+          </symbol>
+
+          <!-- 4. 문서카드 + 텍스트 + 반짝임 배지 -->
+          <symbol id="opt4" viewBox="0 0 512 512">
+            <rect width="512" height="512" rx="118" fill="url(#bg)" /><rect width="512" height="512" rx="118" fill="url(#gloss)" />
+            <g filter="url(#ds)">
+              <rect x="146" y="116" width="220" height="280" rx="30" fill="#fff" />
+              <g fill="#eec4a2">
+                <rect x="180" y="164" width="120" height="22" rx="11" />
+                <rect x="180" y="204" width="152" height="22" rx="11" />
+                <rect x="180" y="244" width="110" height="22" rx="11" />
+                <rect x="180" y="284" width="146" height="22" rx="11" />
+              </g>
+              <g>
+                <circle cx="360" cy="360" r="60" fill="#c85f34" />
+                <path fill="#fff" d="M360 322 L370 348 L397 349 L376 366 L384 392 L360 377 L336 392 L344 366 L323 349 L350 348 Z" />
+              </g>
+            </g>
+          </symbol>
+
+          <!-- 5. 텍스트 줄 + 아래로 자동 채움 화살표 -->
+          <symbol id="opt5" viewBox="0 0 512 512">
+            <rect width="512" height="512" rx="118" fill="url(#bg)" /><rect width="512" height="512" rx="118" fill="url(#gloss)" />
+            <g filter="url(#ds)">
+              <g fill="#fff">
+                <rect x="150" y="150" width="150" height="28" rx="14" />
+                <rect x="322" y="150" width="40" height="28" rx="14" fill-opacity="0.7" />
+                <rect x="150" y="198" width="100" height="28" rx="14" />
+              </g>
+              <g fill="none" stroke="#fff" stroke-width="42" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M256 274 L256 344" />
+                <path d="M212 312 L256 356 L300 312" />
+                <path d="M172 396 L340 396" />
+              </g>
+            </g>
+          </symbol>
+
+          <!-- 6. 말풍선 + 텍스트(간편 입력) -->
+          <symbol id="opt6" viewBox="0 0 512 512">
+            <rect width="512" height="512" rx="118" fill="url(#bg)" /><rect width="512" height="512" rx="118" fill="url(#gloss)" />
+            <g filter="url(#ds)">
+              <path fill="#fff" d="M146 176 h220 a34 34 0 0 1 34 34 v104 a34 34 0 0 1 -34 34 h-120 l-58 52 v-52 h-42 a34 34 0 0 1 -34 -34 v-104 a34 34 0 0 1 34 -34 z" />
+              <g fill="#eec4a2">
+                <rect x="180" y="222" width="150" height="22" rx="11" />
+                <rect x="180" y="258" width="176" height="22" rx="11" />
+                <rect x="180" y="294" width="112" height="22" rx="11" />
+              </g>
+            </g>
+          </symbol>
+        </defs>
+      </svg>
+
+      <div class="grid">
+        <div class="card"><span class="num">1</span><div class="row"><svg width="140" height="140"><use href="#opt1"/></svg><svg class="mini" width="40" height="40"><use href="#opt1"/></svg></div><div class="label">텍스트 3줄 + 반짝임</div></div>
+        <div class="card"><span class="num">2</span><div class="row"><svg width="140" height="140"><use href="#opt2"/></svg><svg class="mini" width="40" height="40"><use href="#opt2"/></svg></div><div class="label">텍스트 + 큰 반짝임(마법)</div></div>
+        <div class="card"><span class="num">3</span><div class="row"><svg width="140" height="140"><use href="#opt3"/></svg><svg class="mini" width="40" height="40"><use href="#opt3"/></svg></div><div class="label">입력칸에 텍스트 + 반짝임</div></div>
+        <div class="card"><span class="num">4</span><div class="row"><svg width="140" height="140"><use href="#opt4"/></svg><svg class="mini" width="40" height="40"><use href="#opt4"/></svg></div><div class="label">문서 + 텍스트 + 반짝 배지</div></div>
+        <div class="card"><span class="num">5</span><div class="row"><svg width="140" height="140"><use href="#opt5"/></svg><svg class="mini" width="40" height="40"><use href="#opt5"/></svg></div><div class="label">텍스트 → 자동 채움 화살표</div></div>
+        <div class="card"><span class="num">6</span><div class="row"><svg width="140" height="140"><use href="#opt6"/></svg><svg class="mini" width="40" height="40"><use href="#opt6"/></svg></div><div class="label">말풍선 + 텍스트(간편)</div></div>
+      </div>
+    </div>
+  </body>
+</html>

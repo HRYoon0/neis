@@ -199,6 +199,13 @@ body {
   font-weight: 500;
   line-height: 1.35;
 }
+.app-header .credit {
+  margin-top: 4px;
+  font-size: 10px;
+  opacity: 0.72;
+  font-weight: 600;
+  letter-spacing: 0.1px;
+}
 .theme-toggle {
   position: relative;
   margin-left: auto;

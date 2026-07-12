@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "NEIS 종합의견 자동입력 도우미",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "엑셀·CSV 파일의 내용을 나이스 학기말종합의견·행동특성및종합의견·창의적체험활동 화면에 번호·이름으로 자동 입력합니다.",
   "permissions": [
     "activeTab",

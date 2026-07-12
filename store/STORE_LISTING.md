@@ -10,10 +10,10 @@
 | 항목 | 값 |
 | --- | --- |
 | 이름 | NEIS 종합의견 자동입력 도우미 |
-| 버전 | 1.0.2 |
+| 버전 | 1.0.3 |
 | 카테고리(제안) | 업무 효율성(Workflow & Planning) 또는 교육 |
 | 언어 | 한국어 |
-| 업로드 패키지 | `dist/neis-autofill-1.0.2.zip` |
+| 업로드 패키지 | `dist/neis-autofill-1.0.3.zip` |
 
 ## 2. 짧은 설명 (요약, 132자 이내)
 
@@ -88,7 +88,7 @@
 소스 수정 후 배포본을 다시 만들려면 프로젝트 루트에서:
 
 ```
-node build.js && (cd dist/neis-autofill && zip -rq ../neis-autofill-1.0.2.zip . -x '.*')
+node build.js && (cd dist/neis-autofill && zip -rq ../neis-autofill-1.0.3.zip . -x '.*')
 ```
 
 `build.js` 가 연습 페이지·심화진단·file:// 매칭을 제거한 클린 빌드를 `dist/` 에 생성합니다.
